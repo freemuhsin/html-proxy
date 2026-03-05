@@ -3,28 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web Proxy</title>
+    <title>HTML Proxy</title>
     <style>
-        body { font-family: Arial, sans-serif; }
-        #proxy-form { margin: 20px; }
-        #proxy-result { margin: 20px; border: 1px solid #ddd; padding: 10px; }
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            color: #333;
+        }
+        header {
+            padding: 20px;
+            background: #333;
+            color: white;
+            text-align: center;
+        }
+        #sidebar {
+            width: 260px;
+            padding: 20px;
+            float: left;
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.15);
+        }
+        #content {
+            margin-left: 280px;
+            padding: 20px;
+        }
+        #urlInput {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        #loadButton {
+            width: 100%;
+            padding: 10px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        #loadButton:disabled {
+            background: #ccc;
+        }
+        #iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+            display: none;
+        }
+        #loading {
+            display: none;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-    <h1>Full-Featured Web Proxy</h1>
-    <form id="proxy-form">
-        <input type="text" id="url-input" placeholder="Enter URL" required>
-        <button type="submit">Proxy</button>
-    </form>
-    <div id="proxy-result"></div>
-
+    <header>
+        <h1>HTML Proxy</h1>
+    </header>
+    <div id="sidebar">
+        <input type="text" id="urlInput" placeholder="Enter URL" />
+        <button id="loadButton">Load URL</button>
+        <h3>Browsing History</h3>
+        <ul id="history"></ul>
+    </div>
+    <div id="content">
+        <div id="loading">Loading...</div>
+        <iframe id="iframe"></iframe>
+    </div>
     <script>
-        document.getElementById('proxy-form').onsubmit = function(event) {
-            event.preventDefault();
-            var url = document.getElementById('url-input').value;
-            var targetUrl = 'https://croxyproxy.com/?url=' + encodeURIComponent(url);
-            document.getElementById('proxy-result').innerHTML = '<iframe src="' + targetUrl + '" style="width:100%; height:600px; border:none;"></iframe>';
-        };
+        const loadButton = document.getElementById('loadButton');
+        const urlInput = document.getElementById('urlInput');
+        const iframe = document.getElementById('iframe');
+        const loading = document.getElementById('loading');
+        const historyList = document.getElementById('history');
+
+        const history = JSON.parse(localStorage.getItem('history')) || [];
+        history.forEach(url => {
+            const li = document.createElement('li');
+            li.textContent = url;
+            historyList.appendChild(li);
+        });
+
+        loadButton.addEventListener('click', async () => {
+            const url = urlInput.value;
+            if (!url) return;
+            loading.style.display = 'block';
+            iframe.style.display = 'none';
+            loadButton.disabled = true;
+            try {
+                const response = await fetch(`https://your-cors-proxy.com?url=${encodeURIComponent(url)}`);
+                const data = await response.text();
+                const doc = new DOMParser().parseFromString(data, 'text/html');
+                iframe.srcdoc = doc.documentElement.innerHTML;
+                iframe.style.display = 'block';
+                if (!history.includes(url)) {
+                    history.push(url);
+                    localStorage.setItem('history', JSON.stringify(history));
+                    const li = document.createElement('li');
+                    li.textContent = url;
+                    historyList.appendChild(li);
+                }
+            } catch (error) {
+                alert('Error loading URL. Please check the console for details.');
+                console.error(error);
+            } finally {
+                loading.style.display = 'none';
+                loadButton.disabled = false;
+            }
+        });
     </script>
 </body>
 </html>
